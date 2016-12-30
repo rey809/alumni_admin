@@ -29,7 +29,7 @@ $("#AnnouncementDetails").click(function(){
 				{
 				    if(field.message == "ok")
 				    {
-				       console.log(field.id);
+				       console.log("Successfully Posted");
 				    }
 				    else
 				    {
@@ -71,38 +71,39 @@ var dataString = 'announcement_details='+announcement_details+'&college='+colleg
 
 
 $("#Submit_Activities").click(function(){
+	var personnel_id = sessionStorage.getItem('personnel_id');
 	var activities_details = $("#activities_details").val();
 	var college = $("#college_name_activities").val();
 	var batch_year = $("#batch_year_activities").val();
 	var submit_activities;
-	var dataString = 'activities_details='+activities_details+'&batch_year='+batch_year+"&college="+college+"&sumbit_activities="+submit_activities;
-	alert(dataString);
+	var dataString = 'personnel_id='+personnel_id+'&activities_details='+activities_details+'&batch_year='+batch_year+"&college="+college+"&submit_activities="+submit_activities;
+
 	if (activities_details==''||college==''||batch_year=='') {
 		alert('Fill all fields');
 	}else{	
 	
-			$.ajax({
-			        type: "POST",
-			        url: "admin-ajax.php",
-			        data: dataString,  
-			            success: function(result){
-
-			        		$('#activities_status').html( "" );
-			              
-
-			            	var result=$.parseJSON(result);
-			            	var reponse = ''; 
-
-			                $.each(result, function(i, field){
-			                	response = " status " + field.status + " college " + field.college + " year " + field.year  + "phone" + field.phone_number +"<br>";
-
-			        		$('#activities_status').append( 	response );
-
-			        		});
-			    }
-			});
-		}
-	/*}*/
+	 	$.ajax
+	    ({
+			type: "POST",
+			url: "admin-ajax.php",
+			data: dataString,  
+			success: function(result)
+			{
+				var result=$.parseJSON(result);
+				$.each(result, function(i, field)
+				{
+				    if(field.message == "ok")	
+				    {
+				       console.log("Successfully Posted");
+				    }
+				    else
+				    {
+				       alert('Unsuccessful delete profile !');  
+				    }
+				});
+			}
+		});
+	}
 }); 
 
 
@@ -133,7 +134,7 @@ $(".profileview").click(function()
 			        document.getElementById("default_linked_to").innerHTML = field.rank;
 			        document.getElementById("username").innerHTML = field.username;
 			        document.getElementById("email").innerHTML = field.email;
-			        document.getElementById("directory").innerHTML = field.directory;
+			        document.getElementById("directory").innerHTML = field.directory_name;
 			        document.getElementById("alumni_id_no").innerHTML = field.alumni_id_no;
 			        document.getElementById("bday").innerHTML = field.bday;
 			        document.getElementById("age").innerHTML = field.age;
@@ -142,9 +143,9 @@ $(".profileview").click(function()
 			        document.getElementById("alumni_year_graduated").innerHTML = field.year;
 			        document.getElementById("Religion").innerHTML = field.religion;
 			        document.getElementById("Address").innerHTML = field.address;
-			        document.getElementById("Phonenumber").innerHTML = field.phonenumber;
+			        document.getElementById("Phonenumber").innerHTML = field.contact_number;
 			        document.getElementById("Position").innerHTML = field.work_position;
-			        document.getElementById("CompanyName").innerHTML = field.company_name;
+			        document.getElementById("CompanyName").innerHTML = field.company;
 			        document.getElementById("CompanyAddress").innerHTML = field.company_address;
 			        document.getElementById("DateHired").innerHTML = field.date_hired;	
 			    }
@@ -198,7 +199,6 @@ $(".delete_alumni_profile").click(function()
 /*------------------------------------------ADD YEAR AJAX*/
 $("#Add_year").click(function()
 {
-alert(username+" "+personnel_id);
 	var Add_year_Button;
     var year = $("#add_year").val();
 	var dataString = 'year='+year+'&Add_year_Button='+Add_year_Button;

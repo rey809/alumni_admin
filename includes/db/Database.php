@@ -13,7 +13,7 @@ class Database{
 	 */
 	private $db_host = "localhost";  // Change as required
 	private $db_user = "root";  // Change as required
-	private $db_pass = "1234567890";  // Change as required
+	private $db_pass = "";  // Change as required
 	private $db_name = "alumni_info_system";	// Change as required
 	
 	/*
@@ -223,6 +223,10 @@ class Database{
         $val = $this->result;
         $this->result = array();
         return $val;
+    }
+
+    public function clearResult() {
+         $this->result = []; 
     }
 
     //Pass the SQL back for debugging

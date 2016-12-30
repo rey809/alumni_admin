@@ -14,9 +14,21 @@
         //  start query to database via mysql crud
         $database->select('alumni', '*', null, "id_no_one =  '$id_no_one' and id_no_two = '$id_no_two' and id_no_three = '$id_no_three' ");
 
+        // print_r($database->getResult());
         // get result after select query above
         return $database->getResult()[0]['alumni_id'];
     }
+
+    function insertAlumniBatchYear($database, $year)
+    {
+
+       if(!isAlumniBatchYearExist($database,  $year)) 
+       {
+             return $database->insert('batch', array('year'=>$year));
+        } else {
+            return false;
+        }
+    }    
 
     /**
      * @param $database
@@ -87,6 +99,29 @@
             return false;
         }
     }
+
+    /**
+     * @param $database
+     * @param null $email
+     * @return bool
+     *   $status = isAlumniBatchYearExist($database, '2000');
+     *   if($status == true) {
+     *   print "mail exist";
+     *   } else {
+     *   print "not exust";
+     *   }
+     */
+    function isAlumniBatchYearExist($database, $year){
+        $database->select('batch', '*', null, " year = '$year'" );
+        $res = $database->getResult();
+
+        if(count($res) > 0) {
+            return true;
+        } else {
+            return false;
+        }        
+    }
+
     /**
      * @param $database
      * @param null $email
@@ -100,7 +135,7 @@
      */
     function isIdNumberExist($database, $id_no_one, $id_no_two, $id_no_three)
     {
-        $database->select('alumni', '*', null, "id_no_one =  '$id_no_one' and id_no_two = '$id_no_two' and id_no_three = '$id_no_three' ");
+        $database->select('alumni', '*', null, "id_no_one =  '$id_no_one' and id_no_two = '$id_no_two' and id_no_three = '$id_no_three' and username='' and email='' ");
         $res = $database->getResult();
 
         if(count($res) > 0) {
@@ -108,6 +143,7 @@
         } else {
             return false;
         }
+
     }
 
 
@@ -156,11 +192,14 @@
     {
 
         // update alumni information
-        return $database->update(
+        $database->update(
             'alumni',
             $alumniInfoParam,
             " id_no_one = '$id_no_one' and id_no_two = '$id_no_two' and id_no_three = '$id_no_three'"
         );
+
+
+       return $database->getResult();
 
         // insert alumni batch
 
@@ -183,7 +222,11 @@
      */
     function insertAlumniBatch($database, $alumniBatchParam=array())
     {
-        return $database->insert('alumni_batch',$alumniBatchParam);
+        
+        $database->insert('alumni_batch',$alumniBatchParam);
+
+        return $database->getResult();
+
     }
 
     /**
@@ -201,7 +244,9 @@
      */
     function insertAlumniCollege($database, $alumniCollegeParam=array())
     {
-         return $database->insert('alumni_directory',$alumniCollegeParam);
+        $database->insert('alumni_directory',$alumniCollegeParam);
+
+        return $database->getResult();
     }
 
 /**
@@ -214,6 +259,8 @@
     function getBacthIdByYear($database, $year)
     {
         $database->select('batch', '*', null, "year = '$year'");
+
+
         return $database->getResult()[0]['batch_id'];
     }
 
@@ -227,7 +274,18 @@
     function getDirectoryIdByYear($database, $name)
     {
         $database->select('directory', '*', null, "name = '$name'");
-        return $database->getResult()[0]['directory_id'];
+        $response = $database->getResult(); 
+        // print_r( $response); 
+
+
+        if(count($response)  > 0) {
+            // print "not empty";
+            return $response[0]['directory_id'];    
+        } else {
+            // print "empty";
+            return false;
+        }
+        
     }
 
     /**
@@ -273,7 +331,31 @@
      */
     function insertAnnouncement($database, $announcementInfo=array())
     {
-        return $database->insert('announcement', $announcementInfo);
+        $database->insert('announcementInfo', $announcementInfo);
+
+        return $database->getResult();
+
+ 
+    }
+
+    /**
+     * @param $database
+     * @param array $announcementInfo
+     * @return mixed
+     * $status = postActivities($database, array('personnel_id'=>1, 'alumni_id'=>0, 'batch_id'=>1, 'college_id'=>1, 'details'=>'This is alright post.'));
+        if($status == true) {
+        print "activities posted";
+        } else {
+        print "activities not posted";
+        }
+
+     */
+    function insertActivities($database, $activitiesInfo=array())
+    {
+        $database->insert('activities', $activitiesInfo);
+
+        return $database->getResult();
+ 
     }
 
     /**
@@ -291,3 +373,57 @@
         // get result after select query above
         return $database->getResult()[0]['personnel_id'];
     }
+
+    function getAlumniInformation($database, $alumni_id){
+
+        $database->select('alumni', '*', null, " alumni_id ='$alumni_id ' ");
+
+        return $database->getResult();
+    }
+
+    function getAlumniBatchId($database, $alumni_id){
+        $database->select('alumni_batch', '*', null, " alumni_id ='$alumni_id ' ");
+
+        return $database->getResult();       
+    }
+
+    function getAlumniBatchYear($database, $batch_id){
+        $database->select('batch', '*', null, " batch_id ='$batch_id ' ");
+
+        return $database->getResult();       
+    }
+
+    function getAlumniDirectoryId($database, $alumni_id){
+        $database->select('alumni_directory', '*', null, " alumni_id ='$alumni_id ' ");
+            
+        return $database->getResult();       
+    }
+
+    function getAlumniDirectoryName($database, $directory_id){
+
+        $database->select('directory', '*', null, " directory_id ='$directory_id ' ");
+            
+        return $database->getResult();       
+    }
+
+    function deteteAlumniinfo($database, $alumni_id){
+        
+        $database->delete('alumni', "alumni_id = '$alumni_id' ");
+         return $database->getResult();  
+    }
+
+    function insertImage($database, $imageInfo=array())
+    {
+        $database->insert('alumni_gallery', $imageInfo);
+
+        return $database->getResult();
+
+ 
+    }
+
+    // function getAllAnnouncementDetails($database){
+
+    //     $database->select('announcement', '*', null");
+            
+    //     return $database->getResult();       
+    // }

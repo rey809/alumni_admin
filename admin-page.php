@@ -207,7 +207,7 @@ include 'includes/header.php';
 							    <select multiple id="batch_year_activities">
 							      <option value="" disabled selected>Choose Batch</option>
 							      <?php
-							      	$sql_batch = mysqli_query($con,"SELECT * year FROM batch");
+							      	$sql_batch = mysqli_query($con,"SELECT * FROM batch");
 							      	while($row_batch=mysqli_fetch_assoc($sql_batch)){
 							      ?>
 							      <option value="<?php echo $row_batch['batch_id']; ?>"><?php echo $row_batch['year']; ?></option>

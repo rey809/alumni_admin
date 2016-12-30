@@ -1,9 +1,14 @@
 <?php
-include 'includes/connect.php';
-header('Access-Control-Allow-Origin: *');
+	header('Access-Control-Allow-Origin: *'); 
+    require('../alumni_admin/includes/db/Database.php'); 
+    require('../alumni_admin/includes/db/database_functions.php');
+    $database = new Database();
+    $database->connect();
+ 
+	$reply = array();
 
-$reply = array();
-if(isset($_POST["submit_post"])){
+if(isset($_POST["submit_post"]))
+{
 
 	$personnel_id = $_POST['personnel_id'];
 	$college_explode = $_POST['college'];
@@ -11,19 +16,38 @@ if(isset($_POST["submit_post"])){
 	$explode_year = $_POST['batch_year'];
 	$year_explode = explode(',', $explode_year);
 	$college_explode = explode(',', $college_explode);
+	$currentdate = date("Y/m/d");
+	$current_time = date("h:i:sa");
+ 
+	foreach ($year_explode as $batch_id)
+	{
 
-
-	foreach ($year_explode as $batch_id) {
-
-		/*foreach ($college_explode as $directory_id) { */
+		foreach ($college_explode as $directory_id) 
+		{ 
  		
-			$sql_batch = mysqli_query($con, "SELECT * FROM batch WHERE batch_id = '$batch_id' ");
-			while ($row_batch = mysqli_fetch_assoc($sql_batch)) {
-					//QUERY GOES HERE
-				$reply[0] = array('message'=>'ok', 'id'=>$row_batch['batch_id']);	
+			$status = insertAnnouncement($database,
+				 array(
+					  'personnel_id'=>$personnel_id ,
+					  'alumni_id'=>0, 
+					  'batch_id'=>$batch_id, 
+					  'directory_id'=>$directory_id,
+					  'details'=>$announcement_details,
+					  'date'=>$currentdate,
+					  'time'=>$current_time
+				  	)
+			);
+		
+			if($status == true)
+			{
+				$reply[0] = array('message'=>'ok');
 			}
+			else 
+			{
+				$reply[0] = array('message'=>'not');
+			}
+			
 		}
-	/*}*/	
+	}	
 		  		
 	echo json_encode($reply);		
 }
@@ -37,13 +61,28 @@ if (isset($_POST['UploadPhotos'])) {
 	$username='alumni-'.rand(0,1000);
 	$new_image_name = $username.".jpg";
 
-	print_r(json_encode($_POST));
-	print_r(json_encode($_FILES));
+	json_encode($_FILES);
 	
 	//QUERY GOES HERE
 	move_uploaded_file($_FILES["file"]["tmp_name"], "assets/img/upload/".$new_image_name);
 
-	$sql = "INSERT INTO images(caption, name, time, date) VALUES('$PhotosDescription', '$new_image_name', '$current_time', '$currentdate')";
+	$status = insertImage($database,
+				 array(
+					  'gallery_name'=>$new_image_name,
+					  'details'=>$PhotosDescription, 
+					  'date'=>$currentdate,
+					  'time'=>$current_time
+				  	)
+			);
+			if($status == true)
+			{
+				$reply[0] = array('message'=>'ok');
+			}
+			else 
+			{
+				$reply[0] = array('message'=>'not');
+			}
+/*	$sql = "INSERT INTO images(caption, name, time, date) VALUES('$PhotosDescription', '$new_image_name', '$current_time', '$currentdate')";
 
 	if (mysqli_query($con,$sql))
 	{
@@ -52,15 +91,16 @@ if (isset($_POST['UploadPhotos'])) {
 
 	}else{
 			$reply[0] = array('message'=>'not');	
-		 }	
+		 }	*/
 	
 	echo json_encode($reply);
 }	
 
 /*-------------------------------------------------Submmit Activities*/
 
-if(isset($_POST["sumbit_activities"])){
+if(isset($_POST["submit_activities"])){
 
+	$personnel_id = $_POST['personnel_id'];
 	$college_explode = $_POST['college'];
 	$activities_details = $_POST['activities_details'];
 	$explode_year = $_POST['batch_year'];
@@ -68,55 +108,30 @@ if(isset($_POST["sumbit_activities"])){
 	$college_explode = explode(',', $college_explode);
 	$currentdate = date("Y/m/d");
 	$current_time = date("h:i:sa");
-	$replyResponse = []; 
 
-	$counter=  0; 
+	foreach ($year_explode as $batch_id) 
+	{
 
-	foreach ($year_explode as $batch_year) {
+		foreach ($college_explode as $directory_id) 
+		{
 
-		foreach ($college_explode as $college) { 
- 
-			//QUERY GOES HERE
-			$sql_college = mysqli_query($con,"SELECT * FROM college WHERE college_id = '".$college."'");
-	  		while ($row_college= mysqli_fetch_assoc($sql_college)) {
-						$sql_batch = "SELECT * FROM batch WHERE year = '".$batch_year."' AND college_id='".$row_college['college_id']."'";
+/*		print($batch_id."OKkk".$directory_id);
+ exit;*/
+			$status = insertActivities($database, array('personnel_id'=>$personnel_id, 'batch_id'=>$batch_id, 'directory_id'=>$directory_id, 'details'=>$activities_details, 'date'=>$currentdate, 'time'=>$current_time));
 
-				if ($result=mysqli_query($con,$sql_batch))
-		  		{
-		  			$rowcount=mysqli_num_rows($result);
-		  			if($rowcount > 0) {  
-
-		  			   while($row= mysqli_fetch_assoc($result)){
-		  			   	$batch_id = $row['batch_id'];
-		  			   	$sql_alumni = mysqli_query($con,"SELECT * FROM alumni WHERE batch_id = '".$batch_id."'");
-		  			   		 
-		  			   		 while($row_alumni= mysqli_fetch_assoc($sql_alumni)){
-							 	$phonenumber = $row_alumni['contact_number'];
-
-								mysqli_query($con,"INSERT INTO activities(batch_id, details, date, time, status) VALUES('$batch_id', '$activities_details', '$currentdate','$current_time', 0 )");					
-							}
-						} 
-
-		  				// print "success"; 
-		  				$replyResponse[$counter]['status'] = 'ok'; 
-
-		  			} else {
-		  				// print "not success";
-						$replyResponse[$counter]['status'] = 'not'; 
-		  			}
-						$replyResponse[$counter]['college'] =  $row_college['name']; 
-		  				$replyResponse[$counter]['year'] =  $batch_year; 
-		  				$replyResponse[$counter]['phone_number'] =  $phonenumber; 
-
-		  				$counter++; 
-
-		  		} else {
-		  			 print "invalid query"; 
-		  		}
+			if($status == true)
+			{
+				$reply[0] = array('message'=>'ok');
 			}
+			else 
+			{
+				$reply[0] = array('message'=>'not');
+			}
+
 		}
-	}	
-	echo json_encode($replyResponse);		
+	}
+	echo json_encode($reply);
+		
 }
 
 /*-------------------------------------------------END Submmit Activities*/
@@ -126,75 +141,75 @@ if(isset($_POST["sumbit_activities"])){
 if(isset($_POST["select_profile"]))
 {
 	$alumni_id = $_POST['alumni_id'];
+	
+	$status = getAlumniInformation($database, $alumni_id);
 
-	$sql_alumni = " SELECT * FROM alumni WHERE alumni_id ='$alumni_id' ";
+/*print ("<pre>");
+	print_r($status);
+print("</pre>");
 
-	if($result_alumni=mysqli_query($con,$sql_alumni))
-	{
-		while ($row_alumni = mysqli_fetch_assoc($result_alumni)) 
-		{
-
-			$result_batch = mysqli_query($con, " SELECT * FROM batch WHERE batch_id = '".$row_alumni['batch_id']."' ");
-			while ($row_batch = mysqli_fetch_assoc($result_batch)) 
+*/
+			if($status == true)
 			{
-					
-				$result_college = mysqli_query($con, " SELECT * FROM college WHERE college_id = '".$row_batch['college_id']."' ");
+ 				
+ 				 $batch_id = myGetAlumniBatchYearId($database, $alumni_id);
+				 $batch_year = myGetAlumniBatchYear($database, $batch_id);
+				 $directory_id = myGetAlumniDirectoryId($database, $alumni_id);
+				 $directory_name = myGetAlumniDirectoryName($database, $directory_id);
 
-				while ($row_college = mysqli_fetch_assoc($result_college)) 
-					{
+				  $birthDate = date('m/d/Y',strtotime($status[0]['bday']));
+				  $birthDate = explode("/", $birthDate);
+				  $age = (date("md", date("U", mktime(0, 0, 0, $birthDate[0], $birthDate[1], $birthDate[2]))) > date("md")
+				    ? ((date("Y") - $birthDate[2]) - 1)
+				    : (date("Y") - $birthDate[2]));
 
-					$fname = $row_alumni['fname'];
-					$mname = $row_alumni['mname'];
-					$lname = $row_alumni['lname'];
-					$suffix = $row_alumni['suffix'];
-					$course = $row_alumni['course'];
-					$rank = $row_alumni['rank'];
-					$username = $row_alumni['username'];
-					$email = $row_alumni['email'];
-					$directory = $row_college['name'];		
-					$one = $row_alumni['id_no_one'];
-					$two = $row_alumni['id_no_two'];
-					$three = $row_alumni['id_no_three'];
-					$bday = $row_alumni['bday'];
-					$age = $row_alumni['age'];
-					$gender = $row_alumni['gender'];
-					$scholarship = $row_alumni['scholarship'];
-					$year = $row_batch['year'];
-					$religion = $row_alumni['religion'];
-					$address = $row_alumni['address'];
-					$contact_number = $row_alumni['contact_number'];
-					$work_position = $row_alumni['work_position'];
-					$company_name = $row_alumni['company_name'];
-					$company_address = $row_alumni['company_address'];
-					$date_hired = $row_alumni['date_hired'];
-
-					$reply[0] = array(
-									  'message' => 'ok', 
-									  'fullname' => $fname." ".$mname." ".$lname." ".$suffix, 
-									  'course' => $course,
-									  'rank' => $rank,
-									  'username' => $username,
-									  'email' => $email, 
-									  'directory' => $directory, 
-									  'alumni_id_no' => $one." ".$two." ".$three,
-									  'bday' => $bday,
-									  'age' => $age,
-									  'gender' => $gender,
-									  'scholarship' => $scholarship,
-									  'year' => $year,
-									  'religion' => $religion,
-									  'address' => $address,
-									  'phonenumber' => $contact_number,
-									  'work_position' => $work_position,
-									  'company_name' => $company_name,
-									  'company_address' => $company_address,
-									  'date_hired' => $date_hired
-									); 
-				}
+					$fullname = $status[0]['fname']." ".$status[0]['mname']." ".$status[0]['lname']." ".$status[0]['suffix']; 
+					$course = $status[0]['course'];
+					$rank = $status[0]['rank'];
+					$username = $status[0]['username'];
+					$email = $status[0]['email']; 
+					//$rank = $[0]['rank'];  directory
+					$alumni_id_no = $status[0]['id_no_one']." ".$status[0]['id_no_two']." ".$status[0]['id_no_three'];
+					$bday = date('m/d/Y',strtotime($status[0]['bday']));
+					$gender = $status[0]['gender'];
+					$scholar = $status[0]['scholar'];
+					$religion = $status[0]['religion'];
+					$address = $status[0]['address'];
+					$contact_number = $status[0]['contact_number'];
+					$work_position = $status[0]['work_position'];
+					$company = $status[0]['company'];
+					$company_address = $status[0]['company_address'];
+					$date_hired = $status[0]['date_hired'];
+ 
+					$reply[0] = array
+					(
+						'message'=>'ok', 
+						'fullname'=>$fullname, 
+						'course'=>$course, 
+						'rank'=>$rank, 
+						'username'=>$username, 
+						'email'=>$email,
+						'directory_name'=>$directory_name,
+						'alumni_id_no'=>$alumni_id_no, 
+						'bday'=>$bday, 
+						'age'=>$age,
+						'gender'=>$gender,
+						'year'=>$batch_year,
+						'scholar'=>$scholar,
+						'religion'=>$religion,
+						'address'=>$address,
+						'contact_number'=>$contact_number,
+						'work_position'=>$work_position,
+						'company'=>$company,
+						'company_address'=>$company_address,
+						'date_hired'=>$date_hired,
+					);
+						 
 			}
-		}
-		
- 	}
+			else 
+			{
+				$reply[0] = array('message'=>'not');
+			}	
 	echo json_encode($reply);
 }
 
@@ -203,7 +218,17 @@ if (isset($_POST['delete_alumni_profile']))
 {
 	$alumni_id = $_POST['alumni_id'];
 
-	$sql_alumni = "DELETE FROM alumni WHERE alumni_id ='$alumni_id' ";
+	$status = deteteAlumniinfo($database, $alumni_id);
+			if($status == true)
+			{
+				$reply[0] = array('message'=>'ok');
+			}
+			else 
+			{
+				$reply[0] = array('message'=>'not');
+			}
+	echo json_encode($reply);	
+	/*$sql_alumni = "DELETE FROM alumni WHERE alumni_id ='$alumni_id' ";
 
 	if (mysqli_query($con, $sql_alumni)) 
 	{
@@ -214,7 +239,7 @@ if (isset($_POST['delete_alumni_profile']))
 		$reply[0] = array('message'=>'not');
 	}
 
-	echo json_encode($reply);
+	echo json_encode($reply);*/
 }
 
 /*------------------------------------------------ADD BATCH YEAR*/
@@ -222,18 +247,19 @@ if (isset($_POST['delete_alumni_profile']))
 if (isset($_POST['Add_year_Button'])) 
 {
 	$year = $_POST['year'];
+
 	//QUERY GOES HERE
-		$sql = mysqli_query($con," SELECT * FROM batch WHERE year = '$year' ");
+	$status = insertAlumniBatchYear($database, $year);
 
-		if (mysqli_num_rows($sql)>0){
-			$reply[0] = array('message'=>'not');
-
-		} else {
-				mysqli_query($con,"INSERT INTO batch(year) VALUES('$year')");
-
-			$reply[0] = array('message'=>'ok');	
-		}
-		echo json_encode($reply);	
+	if($status == true)
+	{
+		$reply[0] = array('message'=>'ok');
+	}
+	else 
+	{
+		$reply[0] = array('message'=>'not');
+	}
+    echo json_encode($reply);
 	
 }
 /*------------------------------------------------END OF ADD BATCH YEAR*/
@@ -245,22 +271,50 @@ if (isset($_POST['Add_Alumni_ID']))
 	$id_two = $_POST['id_no_two'];
 	$id_three = $_POST['id_no_three'];
 
- 	$sql = "SELECT * FROM alumni WHERE id_no_one = '".$id_one."' AND id_no_two = '".$id_two."' AND id_no_three = '".$id_three."' ";
+	$status = insertAlumniIdNumber($database, $id_one, $id_two, $id_three);
 
-    if (mysqli_num_rows(mysqli_query($con,$sql))>0)
-    {
-        $reply[0] = array('message'=>'not');
-        
-    } 
-    else 
-    {
-        mysqli_query($con,"INSERT INTO alumni(id_no_one, id_no_two, id_no_three) VALUES('$id_one', '$id_two', '$id_three')");
-        $reply[0] = array('message'=>'ok');
-    }
+	if($status == true)
+	{
+		$reply[0] = array('message'=>'ok');
+	}
+	else 
+	{
+		$reply[0] = array('message'=>'not');
+	}
     echo json_encode($reply); 
 }
 
 
+
+
+
+
+
+function myGetAlumniBatchYearId($database, $alumni_id)
+{
+
+	$status = getAlumniBatchId($database, $alumni_id);
+	return $status[0]['batch_id'];
+}
+
+function myGetAlumniBatchYear($database, $batch_id)
+{
+
+	$status = getAlumniBatchYear($database, $batch_id);
+	return $status[0]['year'];
+}
+
+function myGetAlumniDirectoryId($database, $alumni_id){
+
+	$status = getAlumniDirectoryId($database, $alumni_id);
+	return $status[0]['directory_id'];
+}
+
+function myGetAlumniDirectoryName($database, $directory_id){
+
+	$status = getAlumniDirectoryName($database, $directory_id);
+	return $status[0]['name'];	
+}
 ?>
 
 

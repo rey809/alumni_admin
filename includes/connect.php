@@ -8,7 +8,7 @@
 ?>
 
 <?php
-$con = mysqli_connect("localhost","root","1234567890","alumni_info_system");
+$con = mysqli_connect("localhost","root","","alumni_info_system");
 
 // Check connection
 if (mysqli_connect_errno())
